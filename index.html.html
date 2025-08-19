@@ -1,213 +1,298 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TYPE://SOUL Values</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #f1f5f9;
-      margin: 0;
-      padding: 20px;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TYPE://SOUL Values & Trading</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; margin:0; padding:20px; 
+         background: linear-gradient(to right, #0f172a, #1e293b); color: #f1f5f9; }
+  h1 { text-align:center; margin-bottom:15px; background: linear-gradient(90deg,#0ea5e9,#3b82f6); 
+       padding:15px; border-radius:12px; color:white; }
+  #tabs { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
+  .tab { padding:10px 20px; cursor:pointer; background: #334155; border-radius:8px; font-weight:bold; transition:0.3s; }
+  .tab:hover { background: #0ea5e9; color:white; transform:scale(1.05); }
+  .tab.active { background: linear-gradient(90deg,#0ea5e9,#3b82f6); color:white; transform:scale(1.1); }
+  #search-box { width:100%; padding:10px; margin-bottom:20px; border-radius:8px; border:none; font-size:16px; }
+  table { width:100%; border-collapse: collapse; background: #1e293b; border-radius:12px; overflow:hidden; transition:0.3s; }
+  th, td { padding:10px; text-align:left; border-bottom:1px solid #334155; cursor:pointer; transition:0.2s; }
+  th { background: linear-gradient(90deg,#0ea5e9,#3b82f6); color:white; }
+  tr:hover { background: #3b4252; }
+  th.sorted-asc::after { content:" ▲"; }
+  th.sorted-desc::after { content:" ▼"; }
+  .high-value { color: #4ade80; font-weight:bold; }
+  .medium-value { color: #facc15; font-weight:bold; }
+  .low-value { color: #f87171; font-weight:bold; }
+  .high-demand { background: #1e3a8a33; font-weight:bold; }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
+  /* Trading tables */
+  .trading-container { display:flex; justify-content:space-around; flex-wrap:wrap; margin-top:20px; }
+  .trade-table { margin-bottom:20px; text-align:center; }
+  .trade-table table { width:300px; height:300px; margin:auto; font-size:16px; border:1px solid #334155; border-radius:8px; }
+  .trade-table td { height:100px; width:100px; text-align:center; vertical-align:middle; border:1px solid #334155; border-radius:4px; transition:0.2s; }
+  .trade-table td:hover { background: #0ea5e933; cursor:pointer; }
+  .trade-table button { cursor:pointer; padding:10px 15px; border:none; border-radius:6px; background:#0ea5e9; color:white; font-weight:bold; transition:0.2s; }
+  .trade-table button:hover { background:#3b82f6; transform:scale(1.1); }
+  .total-box { margin-top:10px; font-weight:bold; font-size:18px; padding:5px 10px; border-radius:8px; text-align:center; }
 
-    /* ===== Table ===== */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #1e293b;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 40px;
-    }
-    th, td {
-      padding: 10px;
-      text-align: left;
-      border-bottom: 1px solid #334155;
-    }
-    th {
-      background: #0ea5e9;
-      color: white;
-    }
-    tr:hover {
-      background: #334155;
-    }
-
-    /* ===== Box Grid ===== */
-    .grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-    }
-
-    .box {
-      position: relative;
-      width: 150px;
-      height: 150px;
-      background: #1e293b;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .box:hover {
-      background: #334155;
-    }
-
-    .plus-btn {
-      font-size: 2rem;
-      color: #0ea5e9;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-
-    .menu {
-      position: absolute;
-      top: 50%;
-      left: 100%;
-      transform: translateY(-50%) scale(0.8);
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 10px;
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-      min-width: 120px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      opacity: 0;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      z-index: 10;
-    }
-
-    .menu.show {
-      display: flex;
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-    }
-
-    .menu button {
-      background: #0ea5e9;
-      border: none;
-      border-radius: 6px;
-      padding: 6px;
-      color: white;
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .menu button:hover {
-      background: #0284c7;
-    }
-  </style>
+  /* Trade evaluation */
+  #trade-evaluation { text-align:center; font-size:20px; font-weight:bold; margin:15px 0; }
+  .trade-evaluation.good { color:#16a34a; }
+  .trade-evaluation.not-good { color:#dc2626; }
+  .trade-evaluation.okay { color:#facc15; }
+</style>
 </head>
 <body>
-  <h1>TYPE://SOUL Values</h1>
+<h1>TYPE://SOUL Values & Trading</h1>
+<div id="tabs">
+  <div class="tab active" onclick="switchTab('values')">Values</div>
+  <div class="tab" onclick="switchTab('trading')">Trading</div>
+</div>
+<input type="text" id="search-box" placeholder="Search items..." oninput="filterTable()" />
+<div id="content-container">
+  <div id="values-tab"></div>
 
-  <!-- Google Sheet Table -->
-  <div id="table-container">Loading values...</div>
+  <div id="trading-tab" style="display:none;">
+    <h2 style="text-align:center;">Trading Tables</h2>
+    <div style="display:flex; justify-content:center; align-items:center; gap:20px; flex-wrap:wrap;">
+      <div>
+        <h3 style="text-align:center;">You (Giving)</h3>
+        <div class="trade-table">
+          <table>
+            <tbody id="table1-body">
+              <tr><td id="t1-0-0"><button onclick="addItemToTable(1,0,0)">+</button></td><td id="t1-0-1"><button onclick="addItemToTable(1,0,1)">+</button></td><td id="t1-0-2"><button onclick="addItemToTable(1,0,2)">+</button></td></tr>
+              <tr><td id="t1-1-0"><button onclick="addItemToTable(1,1,0)">+</button></td><td id="t1-1-1"></td><td id="t1-1-2"><button onclick="addItemToTable(1,1,2)">+</button></td></tr>
+              <tr><td id="t1-2-0"><button onclick="addItemToTable(1,2,0)">+</button></td><td id="t1-2-1"><button onclick="addItemToTable(1,2,1)">+</button></td><td id="t1-2-2"><button onclick="addItemToTable(1,2,2)">+</button></td></tr>
+            </tbody>
+          </table>
+          <div class="total-box" id="table1-total-box">Total Value: <span id="table1-total">0</span></div>
+        </div>
+      </div>
 
-  <!-- Interactive Boxes -->
-  <h2 style="text-align:center; margin: 40px 0 20px;">Interactive Boxes</h2>
-  <div class="grid">
-    <div class="box">
-      <button class="plus-btn">+</button>
-      <div class="menu">
-        <button>Option 1</button>
-        <button>Option 2</button>
-        <button>Option 3</button>
+      <div>
+        <h3 style="text-align:center;">Other (Receiving)</h3>
+        <div class="trade-table">
+          <table>
+            <tbody id="table2-body">
+              <tr><td id="t2-0-0"><button onclick="addItemToTable(2,0,0)">+</button></td><td id="t2-0-1"><button onclick="addItemToTable(2,0,1)">+</button></td><td id="t2-0-2"><button onclick="addItemToTable(2,0,2)">+</button></td></tr>
+              <tr><td id="t2-1-0"><button onclick="addItemToTable(2,1,0)">+</button></td><td id="t2-1-1"></td><td id="t2-1-2"><button onclick="addItemToTable(2,1,2)">+</button></td></tr>
+              <tr><td id="t2-2-0"><button onclick="addItemToTable(2,2,0)">+</button></td><td id="t2-2-1"><button onclick="addItemToTable(2,2,1)">+</button></td><td id="t2-2-2"><button onclick="addItemToTable(2,2,2)">+</button></td></tr>
+            </tbody>
+          </table>
+          <div class="total-box" id="table2-total-box">Total Value: <span id="table2-total">0</span></div>
+        </div>
       </div>
     </div>
-
-    <div class="box">
-      <button class="plus-btn">+</button>
-      <div class="menu">
-        <button>Info</button>
-        <button>Edit</button>
-        <button>Delete</button>
-      </div>
-    </div>
+    <div id="trade-evaluation">Trade Status: </div>
   </div>
+</div>
 
-  <script>
-    /* ===== Google Sheets Loader ===== */
-    const SHEET_ID = "1VAKdYoSluMifvEVLhvZhYlEizW37-fxs3Wm8E4cR5yI"; // change to your sheet
-    const GID = "0"; // first sheet
-    const DIRECT_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
+<script>
+const data = [
+  { Name: "Vow of Sacrifice", Value: 800000, Demand: 10 },
+  { Name: "Creed Emblem", Value: 400000, Demand: 8 },
+  { Name: "Yhwach Blood", Value: 275000, Demand: 9 },
+  { Name: "Hogyoku Ball", Value: 250000, Demand: 9 },
+  { Name: "Vow of Luck", Value: 140000, Demand: 7 },
+  { Name: "Fixer's Glove", Value: 90000, Demand: 7 },
+  { Name: "Vow of Potential", Value: 70000, Demand: 5 },
+  { Name: "Vow of Fist", Value: 60000, Demand: 4 },
+  { Name: "Serum W", Value: 60000, Demand: 6 },
+  { Name: "White Dust", Value: 55000, Demand: 5 },
+  { Name: "Muay Thai", Value: 50000, Demand: 5 },
+  { Name: "Dimensional Shard", Value: 50000, Demand: 4 },
+  { Name: "Stream of Reiatsu", Value: 40000, Demand: 7 },
+  { Name: "Black Flash Dust", Value: 35000, Demand: 3 },
+  { Name: "Chains of Domination", Value: 30000, Demand: 2 },
+  { Name: "Holy Orb", Value: 30000, Demand: 2 },
+  { Name: "Custom Clothing Token", Value: 30000, Demand: 6 },
+  { Name: "Operation Room Essence", Value: 30000, Demand: 5 },
+  { Name: "Shikai Stasis", Value: 25000, Demand: 2 },
+  { Name: "Bambi's Sphere", Value: 25000, Demand: 2 },
+  { Name: "Partial Essence", Value: 25000, Demand: 5 },
+  { Name: "Shard of Reiatsu", Value: 20000, Demand: 6 },
+  { Name: "Custom Bank", Value: 20000, Demand: 4 },
+  { Name: "Dummies Guide To Hakuda", Value: 20000, Demand: 5 },
+  { Name: "Powered Black Elixir", Value: 20000, Demand: 9 },
+  { Name: "Doctors Accomplice Essence", Value: 20000, Demand: 3 },
+  { Name: "Skill Box Chooser", Value: 15000, Demand: 8 },
+  { Name: "Gran Raikoho", Value: 15000, Demand: 3 },
+  { Name: "Fire Knight's Ember", Value: 10000, Demand: 2 },
+  { Name: "Unseen Blade Essence", Value: 10000, Demand: 5 },
+  { Name: "Custom Hair Color Token", Value: 10000, Demand: 3 },
+  { Name: "Hogyoku Fragment", Value: 10000, Demand: 10 },
+  { Name: "Horizon Essence", Value: 7000, Demand: 3 },
+  { Name: "Purple Elixir", Value: 7000, Demand: 7 },
+  { Name: "Crazed Blitz Essence", Value: 6000, Demand: 3 },
+  { Name: "Oathbreaker Remains", Value: 6000, Demand: 2 },
+  { Name: "Thousand Deaths", Value: 6000, Demand: 2 },
+  { Name: "Normal Black Elixir", Value: 6000, Demand: 6 },
+  { Name: "Flame Of Blitz", Value: 5000, Demand: 1 },
+  { Name: "Extricate Essence", Value: 5000, Demand: 2 },
+  { Name: "Seventh Thunder", Value: 5000, Demand: 2 },
+  { Name: "Raging Reiatsu", Value: 5000, Demand: 2 },
+  { Name: "Formless Manual", Value: 5000, Demand: 3 },
+  { Name: "Siphon of Reiatsu", Value: 5000, Demand: 1 },
+  { Name: "Unsealed Rage", Value: 5000, Demand: 1 },
+  { Name: "True Hogyoku", Value: 5000, Demand: 4 },
+  { Name: "Fragment of Aushwalen", Value: 5000, Demand: 1 },
+  { Name: "Kisuke's Boss Elixir", Value: 4000, Demand: 2 },
+  { Name: "Bala Firework Essence", Value: 4000, Demand: 2 },
+  { Name: "Teppusatsu Essence", Value: 4000, Demand: 3 },
+  { Name: "Skill Box", Value: 4000, Demand: 5 },
+  { Name: "Taekwondo Manual", Value: 4000, Demand: 1 },
+  { Name: "Karate Style Manual", Value: 4000, Demand: 1 },
+  { Name: "Soul Leg Style Manual", Value: 4000, Demand: 1 },
+  { Name: "Shattered Comet Essence", Value: 4000, Demand: 1 },
+  { Name: "Thundering Fury", Value: 3000, Demand: 1 },
+  { Name: "World Ticket", Value: 3000, Demand: 1 },
+  { Name: "Vastocar/Vizard Variant RR", Value: 3000, Demand: 2 },
+  { Name: "Letzt Model RR", Value: 1000, Demand: 1 },
+  { Name: "Shunko RR", Value: 1000, Demand: 1 },
+  { Name: "Fusion Essence", Value: 1000, Demand: 1 },
+  { Name: "Shikai/Volt/Res RRs", Value: 1000, Demand: 10 },
+  { Name: "Clan RRs", Value: 1000, Demand: 5 },
+  { Name: "Cybernetic Box", Value: 750, Demand: 4 },
+  { Name: "Territorial Mark Essence", Value: 750, Demand: 1 },
+  { Name: "Hollow Essence", Value: 750, Demand: 1 },
+  { Name: "Soul Ticket", Value: 750, Demand: 1 },
+  { Name: "Flashstep Color RR", Value: 500, Demand: 1 },
+  { Name: "Arrancar Mask RRs", Value: 250, Demand: 2 },
+  { Name: "Eyes RRs", Value: 200, Demand: 1 },
+  { Name: "Face RR", Value: 200, Demand: 1 },
+  { Name: "Marking RR", Value: 150, Demand: 1 }
+];
 
-    async function loadCSV() {
-      try {
-        const response = await fetch(DIRECT_CSV);
-        if (!response.ok) throw new Error("Failed to fetch CSV");
-        const csvText = await response.text();
+let currentSort = { key:null, asc:true };
+let filteredData = [...data];
 
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => renderTable(results.data)
-        });
-      } catch (err) {
-        document.getElementById("table-container").innerText =
-          `Failed to load sheet: ${err.message}. Make sure the sheet is set to 'Anyone with the link → Viewer'.`;
-      }
-    }
+function numberWithCommas(x){return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");}
 
-    function renderTable(data) {
-      if (!data || data.length === 0) {
-        document.getElementById("table-container").innerText = "No data found.";
-        return;
-      }
-
-      let table = "<table><thead><tr>";
-      Object.keys(data[0]).forEach(col => {
-        table += `<th>${col}</th>`;
-      });
-      table += "</tr></thead><tbody>";
-
-      data.forEach(row => {
-        table += "<tr>";
-        Object.values(row).forEach(val => {
-          table += `<td>${val}</td>`;
-        });
-        table += "</tr>";
-      });
-
-      table += "</tbody></table>";
-      document.getElementById("table-container").innerHTML = table;
-    }
-
-    loadCSV();
-
-    /* ===== Plus Button Pop-out Menus ===== */
-    document.querySelectorAll(".box").forEach(box => {
-      const plus = box.querySelector(".plus-btn");
-      const menu = box.querySelector(".menu");
-
-      plus.addEventListener("click", (e) => {
-        e.stopPropagation();
-        menu.classList.toggle("show");
-      });
-
-      // close menu if clicked outside
-      document.addEventListener("click", (e) => {
-        if (!box.contains(e.target)) {
-          menu.classList.remove("show");
-        }
-      });
+function renderTable(dataToRender){
+    let table="<table><thead><tr>";
+    ["Item","Value","Demand"].forEach(key=>table+=`<th onclick="sortTable('${key}')">${key}</th>`);
+    table+="</tr></thead><tbody>";
+    dataToRender.forEach(row=>{
+      let valueClass = row.Value>=100000?"high-value":row.Value>=10000?"medium-value":"low-value";
+      let demandClass = row.Demand>=8?"high-demand":"";
+      table+=`<tr class="${demandClass}"><td>${row.Name}</td><td class="${valueClass}">${numberWithCommas(row.Value)}</td><td>${row.Demand}</td></tr>`;
     });
-  </script>
+    table+="</tbody></table>";
+    document.getElementById("values-tab").innerHTML=table;
+    document.querySelectorAll("#values-tab th").forEach(th=>th.classList.remove("sorted-asc","sorted-desc"));
+    if(currentSort.key){
+      const thIndex=["Item","Value","Demand"].indexOf(currentSort.key);
+      document.querySelectorAll("#values-tab th")[thIndex].classList.add(currentSort.asc?"sorted-asc":"sorted-desc");
+    }
+}
+
+function sortTable(key){
+    if(currentSort.key===key) currentSort.asc=!currentSort.asc;
+    else {currentSort.key=key; currentSort.asc=true;}
+    filteredData.sort((a,b)=>{
+      let valA=key==="Item"?a.Name.toLowerCase():a[key];
+      let valB=key==="Item"?b.Name.toLowerCase():b[key];
+      return currentSort.asc?valA>valB?1:-1:valA<valB?1:-1;
+    });
+    renderTable(filteredData);
+}
+
+function filterTable(){
+    const query=document.getElementById("search-box").value.toLowerCase();
+    filteredData=data.filter(item=>item.Name.toLowerCase().includes(query)||
+      item.Value.toString().includes(query)||item.Demand.toString().includes(query));
+    renderTable(filteredData);
+}
+
+function switchTab(tab){
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    if(tab==='values'){
+      document.getElementById('values-tab').style.display='block';
+      document.getElementById('trading-tab').style.display='none';
+      document.querySelector(".tab:nth-child(1)").classList.add("active");
+    } else {
+      document.getElementById('values-tab').style.display='none';
+      document.getElementById('trading-tab').style.display='block';
+      document.querySelector(".tab:nth-child(2)").classList.add("active");
+    }
+}
+
+renderTable(data);
+
+const itemsList = data.map(d=>({name:d.Name,value:d.Value}));
+
+function addItemToTable(tableNum,row,col){
+    const itemName=prompt("Enter item name:");
+    if(!itemName)return;
+    const itemObj=itemsList.find(i=>i.name.toLowerCase()===itemName.toLowerCase());
+    if(!itemObj){alert("Item not found!"); return;}
+    const qty=parseInt(prompt(`Enter quantity of ${itemObj.name}:`));
+    if(isNaN(qty)||qty<=0){alert("Invalid quantity"); return;}
+    const cell=document.getElementById(`t${tableNum}-${row}-${col}`);
+    cell.innerHTML=`${itemObj.name} x${qty} (${numberWithCommas(itemObj.value*qty)})`;
+    cell.onclick=function(){editCell(cell,itemObj.value)};
+    updateAllTotals();
+}
+
+function editCell(cell,itemValue){
+    const newQty=prompt(`Enter new quantity for ${cell.innerText.split(' x')[0]} (0 to remove):`);
+    if(newQty===null)return;
+    const qty=parseInt(newQty);
+    if(isNaN(qty)||qty<0){alert("Invalid quantity"); return;}
+    if(qty===0){cell.innerHTML=''; cell.onclick=null;}
+    else{cell.innerHTML=`${cell.innerText.split(' x')[0]} x${qty} (${numberWithCommas(itemValue*qty)})`;}
+    updateAllTotals();
+}
+
+function updateTableTotal(tableNum){
+    let total=0;
+    for(let r=0;r<3;r++){
+      for(let c=0;c<3;c++){
+        const cell=document.getElementById(`t${tableNum}-${r}-${c}`);
+        if(cell.innerHTML){
+          const match=cell.innerHTML.match(/\(([\d,]+)\)/);
+          if(match) total+=parseInt(match[1].replace(/,/g,''));
+        }
+      }
+    }
+    document.getElementById(`table${tableNum}-total`).innerText=numberWithCommas(total);
+    updateTradeEvaluation();
+}
+
+function updateAllTotals(){updateTableTotal(1); updateTableTotal(2);}
+
+function updateTradeEvaluation(){
+    const youTotal = parseInt(document.getElementById('table1-total').innerText.replace(/,/g,''));
+    const otherTotal = parseInt(document.getElementById('table2-total').innerText.replace(/,/g,''));
+    const diff = otherTotal - youTotal; // other - you
+    const evaluation = document.getElementById('trade-evaluation');
+    const totalBoxYou = document.getElementById('table1-total-box');
+    const totalBoxOther = document.getElementById('table2-total-box');
+
+    if(Math.abs(diff)<=50000) {
+        evaluation.innerText = `Trade is Okay (+/-50k difference)`;
+        evaluation.className='trade-evaluation okay';
+        totalBoxYou.style.background='#facc15';
+        totalBoxYou.style.color='black';
+        totalBoxOther.style.background='#facc15';
+        totalBoxOther.style.color='black';
+    } else if(diff > 0) {
+        evaluation.innerText = `Good Trade! You are getting more value than giving`;
+        evaluation.className='trade-evaluation good';
+        totalBoxYou.style.background='#dc2626';
+        totalBoxYou.style.color='white';
+        totalBoxOther.style.background='#16a34a';
+        totalBoxOther.style.color='white';
+    } else {
+        evaluation.innerText = `Not Good Trade! You are giving more than receiving`;
+        evaluation.className='trade-evaluation not-good';
+        totalBoxYou.style.background='#16a34a';
+        totalBoxYou.style.color='white';
+        totalBoxOther.style.background='#dc2626';
+        totalBoxOther.style.color='white';
+    }
+}
+</script>
 </body>
 </html>
+
