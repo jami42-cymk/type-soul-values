@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TYPE://SOUL Values</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* ===== Table ===== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 40px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid #334155;
+    }
+    th {
+      background: #0ea5e9;
+      color: white;
+    }
+    tr:hover {
+      background: #334155;
+    }
+
+    /* ===== Box Grid ===== */
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .box {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      background: #1e293b;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .box:hover {
+      background: #334155;
+    }
+
+    .plus-btn {
+      font-size: 2rem;
+      color: #0ea5e9;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .menu {
+      position: absolute;
+      top: 50%;
+      left: 100%;
+      transform: translateY(-50%) scale(0.8);
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 120px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 10;
+    }
+
+    .menu.show {
+      display: flex;
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+
+    .menu button {
+      background: #0ea5e9;
+      border: none;
+      border-radius: 6px;
+      padding: 6px;
+      color: white;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .menu button:hover {
+      background: #0284c7;
+    }
+  </style>
+</head>
+<body>
+  <h1>TYPE://SOUL Values</h1>
+
+  <!-- Google Sheet Table -->
+  <div id="table-container">Loading values...</div>
+
+  <!-- Interactive Boxes -->
+  <h2 style="text-align:center; margin: 40px 0 20px;">Interactive Boxes</h2>
+  <div class="grid">
+    <div class="box">
+      <button class="plus-btn">+</button>
+      <div class="menu">
+        <button>Option 1</button>
+        <button>Option 2</button>
+        <button>Option 3</button>
+      </div>
+    </div>
+
+    <div class="box">
+      <button class="plus-btn">+</button>
+      <div class="menu">
+        <button>Info</button>
+        <button>Edit</button>
+        <button>Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ===== Google Sheets Loader ===== */
+    const SHEET_ID = "1VAKdYoSluMifvEVLhvZhYlEizW37-fxs3Wm8E4cR5yI"; // change to your sheet
+    const GID = "0"; // first sheet
+    const DIRECT_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
+
+    async function loadCSV() {
+      try {
+        const response = await fetch(DIRECT_CSV);
+        if (!response.ok) throw new Error("Failed to fetch CSV");
+        const csvText = await response.text();
+
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => renderTable(results.data)
+        });
+      } catch (err) {
+        document.getElementById("table-container").innerText =
+          `Failed to load sheet: ${err.message}. Make sure the sheet is set to 'Anyone with the link → Viewer'.`;
+      }
+    }
+
+    function renderTable(data) {
+      if (!data || data.length === 0) {
+        document.getElementById("table-container").innerText = "No data found.";
+        return;
+      }
+
+      let table = "<table><thead><tr>";
+      Object.keys(data[0]).forEach(col => {
+        table += `<th>${col}</th>`;
+      });
+      table += "</tr></thead><tbody>";
+
+      data.forEach(row => {
+        table += "<tr>";
+        Object.values(row).forEach(val => {
+          table += `<td>${val}</td>`;
+        });
+        table += "</tr>";
+      });
+
+      table += "</tbody></table>";
+      document.getElementById("table-container").innerHTML = table;
+    }
+
+    loadCSV();
+
+    /* ===== Plus Button Pop-out Menus ===== */
+    document.querySelectorAll(".box").forEach(box => {
+      const plus = box.querySelector(".plus-btn");
+      const menu = box.querySelector(".menu");
+
+      plus.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("show");
+      });
+
+      // close menu if clicked outside
+      document.addEventListener("click", (e) => {
+        if (!box.contains(e.target)) {
+          menu.classList.remove("show");
+        }
+      });
+    });
+  </script>
+</body>
+</html>
